@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    image: disaster_tweets:latest
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DB_PATH: ${DB_PATH:-/app/data/predictions.db}
+    volumes:
+      - disaster_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  disaster_data:
