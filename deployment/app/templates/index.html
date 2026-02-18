@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Disaster Tweet Predictor</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+{% set has_result = (result is not none) %}
+{% set is_disaster = has_result and (result.label == 1) %}
+{% set disaster_prob = ((result.probability * 100)|round(1)) if has_result else 0 %}
+{% set normal_prob = (((1 - result.probability) * 100)|round(1)) if has_result else 0 %}
+<body class="{% if is_disaster %}disaster-mode{% elif has_result %}normal-mode{% endif %}">
+  {% if is_disaster %}
+  <div class="fire-overlay" aria-hidden="true">
+    <span class="ember e1">🔥</span>
+    <span class="ember e2">🔥</span>
+    <span class="ember e3">🔥</span>
+    <span class="ember e4">🔥</span>
+    <span class="ember e5">🔥</span>
+    <span class="ember e6">🔥</span>
+    <span class="ember e7">🔥</span>
+    <span class="ember e8">🔥</span>
+  </div>
+  {% endif %}
+  {% if has_result and not is_disaster %}
+  <div class="normal-overlay" aria-hidden="true">
+    <span class="breeze b1">🍃</span>
+    <span class="breeze b2">🍃</span>
+    <span class="breeze b3">🍃</span>
+    <span class="breeze b4">🍃</span>
+    <span class="breeze b5">🍃</span>
+    <span class="breeze b6">🍃</span>
+  </div>
+  {% endif %}
+  <main class="container">
+    <h1>Disaster Tweet Predictor</h1>
+    <p class="subtitle">Classify tweets and store prediction logs.</p>
+
+    <form method="post" action="/predict-ui" class="card">
+      <label for="tweet">Tweet</label>
+      <textarea id="tweet" name="tweet" rows="6" required>{{ form_data.tweet }}</textarea>
+
+      <label for="keyword">Keyword (optional)</label>
+      <input id="keyword" name="keyword" type="text" value="{{ form_data.keyword }}" />
+
+      <button type="submit">Predict</button>
+    </form>
+
+    <section class="card">
+      <h2>Prediction Bars</h2>
+      <div class="chart-block">
+        <div class="chart-row">
+          <span class="chart-label">Disaster</span>
+          <div class="chart-track">
+            <div class="chart-bar danger" style="width: {{ disaster_prob }}%;"></div>
+          </div>
+          <span class="chart-val">{{ disaster_prob }}%</span>
+        </div>
+        <div class="chart-row">
+          <span class="chart-label">Normal</span>
+          <div class="chart-track">
+            <div class="chart-bar safe" style="width: {{ normal_prob }}%;"></div>
+          </div>
+          <span class="chart-val">{{ normal_prob }}%</span>
+        </div>
+      </div>
+      {% if not has_result %}
+      <p class="hint">Run a prediction to fill the bars.</p>
+      {% endif %}
+    </section>
+
+    {% if error %}
+    <section class="card alert danger-alert">
+      <strong>{{ error.error_code }}:</strong> {{ error.message }}
+    </section>
+    {% endif %}
+
+    {% if has_result %}
+    <section class="card result">
+      <h2>Result</h2>
+      <p>
+        <strong>Label:</strong>
+        {% if is_disaster %}
+          Disaster
+        {% else %}
+          Normal
+        {% endif %}
+      </p>
+      <div class="meter-wrap" aria-label="Prediction confidence">
+        <div
+          class="meter-fill {% if is_disaster %}danger{% else %}safe{% endif %}"
+          style="width: {{ disaster_prob }}%;"
+        ></div>
+      </div>
+
+      {% if is_disaster %}
+      <div class="alert danger-alert">
+        <strong>Emergency tip:</strong> Stay calm, share your live location with trusted contacts, and follow local emergency alerts.
+      </div>
+      <div class="disaster-scene" aria-hidden="true">
+        <div class="blast-text">BOOM</div>
+        <div class="fire f1">🔥</div>
+        <div class="fire f2">🔥</div>
+        <div class="fire f3">🔥</div>
+        <div class="fire f4">🔥</div>
+      </div>
+      {% else %}
+      <div class="alert safe-alert">
+        <strong>Relax:</strong> Nothing happened.
+      </div>
+      {% endif %}
+
+      {% if result.warnings %}
+      <h3>Warnings</h3>
+      <ul>
+        {% for item in result.warnings %}
+        <li>
+          <strong>{{ item.warning_code }}:</strong> {{ item.message }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </section>
+    {% endif %}
+  </main>
+</body>
+</html>
