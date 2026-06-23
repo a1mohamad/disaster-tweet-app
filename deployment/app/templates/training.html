@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Training | Disaster Tweet Predictor{% endblock %}
+{% block content %}
+<section class="docs-hero docs-hero-split">
+  <div>
+    <span class="section-kicker">Training</span>
+    <h1>Training story, without the notebook noise.</h1>
+    <p>The research pipeline turns Kaggle tweet text into padded token sequences, trains a compact BiLSTM classifier, then exports the best artifacts for FastAPI and ONNX runtime deployment.</p>
+  </div>
+  <div class="docs-score-card">
+    <span>Best validation F1</span>
+    <strong>0.7588</strong>
+    <div class="mini-bar" style="--value: 75.88%;"></div>
+    <small>Best validation accuracy: 0.7971</small>
+  </div>
+</section>
+
+<section class="training-dashboard">
+  <article class="docs-panel visual-panel">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Data</span>
+        <h2>Dataset shape</h2>
+      </div>
+      <i class="fa-solid fa-table" aria-hidden="true"></i>
+    </div>
+    <div class="donut-layout">
+      <div class="donut-chart" style="--a: 70; --b: 30;">
+        <span>10,876</span>
+        <small>rows</small>
+      </div>
+      <div class="legend-list">
+        <span><b class="legend-train"></b>7,613 train rows</span>
+        <span><b class="legend-test"></b>3,263 test rows</span>
+        <span><b class="legend-keyword"></b>keyword context enabled</span>
+      </div>
+    </div>
+  </article>
+
+  <article class="docs-panel visual-panel">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Model</span>
+        <h2>Compact BiLSTM</h2>
+      </div>
+      <i class="fa-solid fa-brain" aria-hidden="true"></i>
+    </div>
+    <div class="model-stack">
+      <span>Token IDs</span>
+      <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+      <span>100d Embedding</span>
+      <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+      <span>2-layer BiLSTM</span>
+      <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+      <span>Dropout + Binary Head</span>
+    </div>
+  </article>
+
+  <article class="docs-panel visual-panel wide">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Training curve</span>
+        <h2>Validation improved, then early stopping protected the model.</h2>
+      </div>
+      <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+    </div>
+    <div class="curve-grid">
+      <div class="curve-card">
+        <span>Epoch 1 F1</span>
+        <strong>0.5183</strong>
+        <div class="mini-bar muted" style="--value: 51.83%;"></div>
+      </div>
+      <div class="curve-card">
+        <span>Best F1</span>
+        <strong>0.7588</strong>
+        <div class="mini-bar" style="--value: 75.88%;"></div>
+      </div>
+      <div class="curve-card">
+        <span>Final F1</span>
+        <strong>0.7282</strong>
+        <div class="mini-bar soft-danger" style="--value: 72.82%;"></div>
+      </div>
+    </div>
+    <div class="timeline-strip">
+      <span>Warmup</span>
+      <span>Generalization peak</span>
+      <span>Overfit pressure</span>
+      <span>Artifact export</span>
+    </div>
+  </article>
+
+  <article class="docs-panel visual-panel">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Inputs</span>
+        <h2>Text pipeline</h2>
+      </div>
+      <i class="fa-solid fa-filter" aria-hidden="true"></i>
+    </div>
+    <ul class="process-list">
+      <li><span>01</span>Lowercase and clean repeated whitespace</li>
+      <li><span>02</span>Merge optional keyword with tweet text</li>
+      <li><span>03</span>Map tokens into a 10k vocabulary</li>
+      <li><span>04</span>Pad or truncate to 200 tokens</li>
+    </ul>
+  </article>
+
+  <article class="docs-panel visual-panel">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Artifacts</span>
+        <h2>What training produces</h2>
+      </div>
+      <i class="fa-solid fa-box-archive" aria-hidden="true"></i>
+    </div>
+    <div class="artifact-cloud">
+      <span>best_model.pt</span>
+      <span>best_threshold.pt</span>
+      <span>vocabs.json</span>
+      <span>training_history.json</span>
+      <span>config.yaml</span>
+    </div>
+  </article>
+</section>
+{% endblock %}
