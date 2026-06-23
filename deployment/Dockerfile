@@ -10,12 +10,16 @@ RUN addgroup --system appgroup \
     && adduser --system --ingroup appgroup appuser
 
 COPY requirements.txt .
+COPY requirements-runtime.txt .
+COPY requirements-torch.txt .
+
 RUN python -m pip install --no-cache-dir --retries 5 --timeout 120 -r requirements.txt
 
 COPY app ./app
+COPY main.py .
+COPY scripts ./scripts
 COPY artifacts ./artifacts
-COPY data ./data
-RUN mkdir -p /app/data && chown -R appuser:appgroup /app
+RUN mkdir -p /app/data /app/artifacts && chown -R appuser:appgroup /app
 
 USER appuser
 
