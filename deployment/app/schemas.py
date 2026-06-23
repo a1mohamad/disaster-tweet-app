@@ -10,7 +10,8 @@ class PredictResponse(BaseModel):
     label: int
     label_name: str
     threshold: float
-    warnings: List[Dict[str, Any]] = []
+    backend: str
+    warnings: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class PredictionLog(BaseModel):
@@ -23,4 +24,5 @@ class PredictionLog(BaseModel):
     label: int
     label_name: str
     threshold: float
-    warnings: List[Dict[str, Any]] = []
+    backend: str
+    warnings: List[Dict[str, Any]] = Field(default_factory=list)
