@@ -1,6 +1,6 @@
 import json
 import re
-import torch
+import numpy as np
 
 from json import JSONDecodeError
 from app.utils.errors import ArtifactError
@@ -65,8 +65,8 @@ def tokenize_and_pad(text, word2idx, config):
     else:
         ids = ids[:config.MAX_LENGTH]
 
-    input_ids = torch.tensor([ids], dtype=torch.long, device=config.DEVICE)
-    input_length = torch.tensor([actual_length], dtype=torch.long)
+    input_ids = np.asarray([ids], dtype=np.int64)
+    input_length = np.asarray([actual_length], dtype=np.int64)
     
     return input_ids, input_length
 
