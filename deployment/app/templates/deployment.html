@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Deployment | Disaster Tweet Predictor{% endblock %}
+{% block content %}
+<section class="docs-hero docs-hero-split">
+  <div>
+    <span class="section-kicker">Deployment</span>
+    <h1>Two Docker paths, one inference contract.</h1>
+    <p>The deployment is intentionally split: a full local image for development and PyTorch fallback, and a lean runtime image for Render that serves ONNX inference with FastAPI.</p>
+  </div>
+  <div class="docs-score-card">
+    <span>Runtime target</span>
+    <strong>Render</strong>
+    <div class="mini-bar" style="--value: 100%;"></div>
+  </div>
+</section>
+
+<section class="deployment-map">
+  <article class="docs-panel wide tech-stack-panel">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Runtime stack</span>
+        <h2>Services and tools behind the demo</h2>
+      </div>
+      <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+    </div>
+    <div class="big-tech-grid">
+      <div><i class="fa-brands fa-docker" aria-hidden="true"></i><strong>Docker</strong></div>
+      <div><i class="fa-solid fa-cloud" aria-hidden="true"></i><strong>Render</strong></div>
+      <div><i class="fa-solid fa-code" aria-hidden="true"></i><strong>Jinja</strong></div>
+      <div><i class="fa-solid fa-database" aria-hidden="true"></i><strong>SQLite3</strong></div>
+      <div><i class="fa-solid fa-bolt" aria-hidden="true"></i><strong>FastAPI</strong></div>
+    </div>
+  </article>
+
+  <article class="docs-panel deployment-lane">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Local</span>
+        <h2>Full image</h2>
+      </div>
+      <i class="fa-brands fa-python" aria-hidden="true"></i>
+    </div>
+    <div class="lane-flow">
+      <span>Dockerfile</span>
+      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      <span>requirements.txt</span>
+      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      <span>ONNX + PT</span>
+    </div>
+    <p>Use this for local development, artifact inspection, and fallback testing. It keeps the PyTorch path available.</p>
+  </article>
+
+  <article class="docs-panel deployment-lane">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Render</span>
+        <h2>Runtime image</h2>
+      </div>
+      <i class="fa-brands fa-docker" aria-hidden="true"></i>
+    </div>
+    <div class="lane-flow">
+      <span>Dockerfile.runtime</span>
+      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      <span>onnxruntime</span>
+      <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      <span>FastAPI</span>
+    </div>
+    <p>Use this for Render. It copies only the runtime artifacts needed by the demo and avoids the heavy torch dependency.</p>
+  </article>
+
+  <article class="docs-panel wide">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Request lifecycle</span>
+        <h2>What happens when a tweet is submitted</h2>
+      </div>
+      <i class="fa-solid fa-route" aria-hidden="true"></i>
+    </div>
+    <div class="pipeline-board">
+      <div><i class="fa-solid fa-keyboard" aria-hidden="true"></i><span>Tweet</span></div>
+      <div><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i><span>Clean + tokenize</span></div>
+      <div><i class="fa-solid fa-microchip" aria-hidden="true"></i><span>ONNX inference</span></div>
+      <div><i class="fa-solid fa-sliders" aria-hidden="true"></i><span>Threshold 0.5200</span></div>
+      <div><i class="fa-solid fa-database" aria-hidden="true"></i><span>SQLite log</span></div>
+    </div>
+  </article>
+
+  <article class="docs-panel visual-panel">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Artifacts</span>
+        <h2>Bundled for demo deploy</h2>
+      </div>
+      <i class="fa-solid fa-cubes" aria-hidden="true"></i>
+    </div>
+    <div class="artifact-cloud">
+      <span>best_model.onnx</span>
+      <span>best_threshold.json</span>
+      <span>vocabs.json</span>
+      <span>label_mapping.json</span>
+    </div>
+  </article>
+
+  <article class="docs-panel visual-panel">
+    <div class="panel-title-row">
+      <div>
+        <span class="section-kicker">Persistence</span>
+        <h2>Demo logging</h2>
+      </div>
+      <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+    </div>
+    <p>SQLite is used as temporary demo storage on Render. That keeps the project free and simple, while still showing prediction history behavior.</p>
+    <div class="status-pills">
+      <span>Free-tier friendly</span>
+      <span>Temporary DB</span>
+      <span>No object storage required</span>
+    </div>
+  </article>
+</section>
+{% endblock %}
