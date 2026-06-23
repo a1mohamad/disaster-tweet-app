@@ -9,4 +9,7 @@ __pycache__/
 .venv/
 venv/
 .env
+.env.runtime
 docker-compose.override.yml
+data/
+*.db
