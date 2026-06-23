@@ -56,6 +56,15 @@ templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
+def template_runtime_context(request: Request) -> dict:
+    config = getattr(request.app.state, "config", None)
+    db_path = str(config.DB_PATH) if config else "SQLite"
+    return {
+        "db_engine": "SQLite",
+        "db_path": db_path,
+    }
+
+
 def run_prediction(tweet: str, keyword: str | None = None) -> PredictResponse:
     config = app.state.config
     word2idx = app.state.word2idx
@@ -106,9 +115,44 @@ def home(request: Request):
         "index.html",
         {
             "request": request,
+            "active_page": "home",
+        },
+    )
+
+
+@app.get("/app", response_class=HTMLResponse)
+def app_page(request: Request):
+    return templates.TemplateResponse(
+        "app.html",
+        {
+            "request": request,
             "result": None,
             "error": None,
             "form_data": {"tweet": "", "keyword": ""},
+            "active_page": "app",
+            **template_runtime_context(request),
+        },
+    )
+
+
+@app.get("/training", response_class=HTMLResponse)
+def training_page(request: Request):
+    return templates.TemplateResponse(
+        "training.html",
+        {
+            "request": request,
+            "active_page": "training",
+        },
+    )
+
+
+@app.get("/deployment", response_class=HTMLResponse)
+def deployment_page(request: Request):
+    return templates.TemplateResponse(
+        "deployment.html",
+        {
+            "request": request,
+            "active_page": "deployment",
         },
     )
 
@@ -138,12 +182,14 @@ def predict_ui(
         error = exc.to_dict()
 
     return templates.TemplateResponse(
-        "index.html",
+        "app.html",
         {
             "request": request,
             "result": result.model_dump() if result else None,
             "error": error,
             "form_data": {"tweet": tweet, "keyword": keyword},
+            "active_page": "app",
+            **template_runtime_context(request),
         },
     )
 
