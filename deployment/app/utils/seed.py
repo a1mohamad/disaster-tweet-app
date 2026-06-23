@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import random
-import torch
 
 def seed_everything(seed, deterministic=False):
     '''
@@ -10,9 +9,15 @@ def seed_everything(seed, deterministic=False):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
+    try:
+        import torch
+    except Exception:
+        return
+
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
 
     if deterministic:
         # Only use these for the final "Gold" run to ensure exact results
