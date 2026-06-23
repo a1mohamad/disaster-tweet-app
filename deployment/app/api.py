@@ -30,13 +30,6 @@ async def lifespan(app: FastAPI):
             {"path": str(config.VOCAB_PATH)},
         )
     
-    if not config.MODEL_PATH.exists():
-        raise ArtifactError(
-            "MODEL_NOT_FOUND",
-            "Model file not found",
-            {"path": str(config.MODEL_PATH)}
-        )
-    
     word2idx, idx2word, vocab_size = load_vocabs(config.VOCAB_PATH)
     predictor = DisasterTwittsPredictor.from_config(config, vocab_size)
     if config.LABEL_MAPPING_PATH.exists():
@@ -81,6 +74,7 @@ def run_prediction(tweet: str, keyword: str | None = None) -> PredictResponse:
         label=label,
         label_name=label_name,
         threshold=predictor.threshold,
+        backend=predictor.backend_name,
         warnings=list(warnings) if warnings else [],
     )
 
@@ -94,6 +88,7 @@ def run_prediction(tweet: str, keyword: str | None = None) -> PredictResponse:
             label=label,
             label_name=label_name,
             threshold=predictor.threshold,
+            backend=predictor.backend_name,
             warnings=list(warnings) if warnings else [],
         )
     except Exception:
@@ -119,7 +114,11 @@ def home(request: Request):
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    predictor = getattr(app.state, "predictor", None)
+    return {
+        "status": "ok",
+        "backend": predictor.backend_name if predictor else None,
+    }
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(req: PredictRequest):
