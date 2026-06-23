@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}App | Disaster Tweet Predictor{% endblock %}
+{% block content %}
+{% set has_result = (result is not none) %}
+{% set is_disaster = has_result and (result.label == 1) %}
+{% set disaster_prob = ((result.probability * 100)|round(1)) if has_result else 0 %}
+{% set normal_prob = (((1 - result.probability) * 100)|round(1)) if has_result else 0 %}
+{% set confidence = disaster_prob if is_disaster else normal_prob %}
+
+<section class="signal-hero" aria-label="Classifier overview">
+  <div class="hero-copy">
+    <span class="section-kicker">Realtime text triage</span>
+    <h1>Read the signal before the timeline gets loud.</h1>
+    <p>Submit a tweet, compare calibrated disaster probability, and keep a lightweight SQLite prediction log for the demo.</p>
+  </div>
+  <div class="hero-strip" aria-label="Current runtime summary">
+    <div>
+      <span>Container</span>
+      <strong>Docker</strong>
+    </div>
+    <div>
+      <span>Deploy</span>
+      <strong>Render</strong>
+    </div>
+    <div>
+      <span>Framework</span>
+      <strong>PyTorch</strong>
+    </div>
+  </div>
+</section>
+
+<section class="ops-grid">
+  <form method="post" action="/predict-ui" class="console-panel composer-panel">
+    <div class="panel-topline">
+      <div>
+        <span class="section-kicker">Input deck</span>
+        <h2>Tweet capture</h2>
+      </div>
+    </div>
+
+    <label for="tweet">Tweet text</label>
+    <textarea id="tweet" name="tweet" rows="9" required placeholder="Paste a tweet that may describe an emergency...">{{ form_data.tweet }}</textarea>
+
+    <label for="keyword">Keyword</label>
+    <input id="keyword" name="keyword" type="text" value="{{ form_data.keyword }}" placeholder="Optional: fire, flood, earthquake..." />
+
+    <button type="submit" class="primary-action">
+      <i class="fa-solid fa-wave-square" aria-hidden="true"></i>
+      Analyze Signal
+    </button>
+
+    {% if error %}
+    <div class="notice notice-danger">
+      <strong>{{ error.error_code }}</strong>
+      <span>{{ error.message }}</span>
+    </div>
+    {% endif %}
+  </form>
+
+  <section class="console-panel signal-panel">
+    <div class="scan-header">
+      <div>
+        <span class="section-kicker">Classifier output</span>
+        {% if has_result %}
+        <h2>{{ "Disaster signal" if is_disaster else "Normal signal" }}</h2>
+        {% else %}
+        <h2>Awaiting signal</h2>
+        {% endif %}
+      </div>
+      <span class="classification-pill {{ 'danger' if is_disaster else 'safe' if has_result else 'idle' }}">
+        {{ result.label_name if has_result else "No prediction" }}
+      </span>
+    </div>
+
+    <div class="signal-readout">
+      <div class="radar-gauge {{ 'danger' if is_disaster else 'safe' if has_result else 'idle' }}" style="--confidence: {{ confidence if has_result else 0 }};">
+        <div class="gauge-face">
+          <strong>{{ confidence if has_result else 0 }}%</strong>
+          <small>confidence</small>
+        </div>
+      </div>
+
+      <div class="probability-stack">
+        <div class="probability-row danger-row">
+          <div class="probability-label">
+            <span>Disaster</span>
+            <strong>{{ disaster_prob }}%</strong>
+          </div>
+          <div class="signal-track">
+            <span class="signal-fill danger-fill" style="width: {{ disaster_prob }}%;"></span>
+          </div>
+        </div>
+
+        <div class="probability-row safe-row">
+          <div class="probability-label">
+            <span>Normal</span>
+            <strong>{{ normal_prob }}%</strong>
+          </div>
+          <div class="signal-track">
+            <span class="signal-fill safe-fill" style="width: {{ normal_prob }}%;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="response-brief {{ 'danger' if is_disaster else 'safe' if has_result else 'idle' }}">
+      <span>Operational note</span>
+      {% if has_result and is_disaster %}
+      <p>Potential emergency signal detected. Preserve context, avoid reposting unverified claims, and compare with official local sources.</p>
+      {% elif has_result %}
+      <p>The tweet stayed below the calibrated disaster threshold for this model run.</p>
+      {% else %}
+      <p>Run a tweet through the classifier to populate probability, label, backend, and validation notes.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <aside class="side-stack">
+    <section class="console-panel compact-panel">
+      <div class="panel-topline">
+        <div>
+          <span class="section-kicker">Runtime</span>
+          <h2>Configuration</h2>
+        </div>
+      </div>
+      <div class="runtime-grid">
+        <div>
+          <span>Backend</span>
+          <strong>{{ result.backend if has_result else "onnx" }}</strong>
+        </div>
+        <div>
+          <span>Label</span>
+          <strong>{{ result.label_name if has_result else "-" }}</strong>
+        </div>
+        <div>
+          <span>Threshold</span>
+          <strong>{{ "%.4f"|format(result.threshold) if has_result else "0.5200" }}</strong>
+        </div>
+        <div>
+          <span>Database</span>
+          <strong>{{ db_engine }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="console-panel compact-panel">
+      <div class="panel-topline">
+        <div>
+          <span class="section-kicker">Validation</span>
+          <h2>Warnings</h2>
+        </div>
+      </div>
+      {% if has_result and result.warnings %}
+      <ul class="warning-list">
+        {% for item in result.warnings %}
+        <li>
+          <strong>{{ item.warning_code }}</strong>
+          <span>{{ item.message }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+        <div>
+          <strong>No warnings</strong>
+          <span>{{ "Input passed validation." if has_result else "Warnings appear after prediction." }}</span>
+        </div>
+      </div>
+      {% endif %}
+    </section>
+  </aside>
+</section>
+{% endblock %}
