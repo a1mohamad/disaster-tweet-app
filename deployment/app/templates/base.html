@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Disaster Tweet Predictor{% endblock %}</title>
+  <meta name="description" content="Disaster tweet classification interface." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="Disaster Tweet Predictor home">
+        <span class="brand-logo x-logo" aria-hidden="true">X</span>
+        <span class="brand-stack">
+          <strong>Disaster Tweet Predictor</strong>
+          <small>Signal intelligence for crisis tweets</small>
+        </span>
+      </a>
+
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="/" class="{{ 'active' if active_page == 'home' else '' }}">Home</a>
+        <a href="/app" class="{{ 'active' if active_page == 'app' else '' }}">App</a>
+        <a href="/training" class="{{ 'active' if active_page == 'training' else '' }}">Training</a>
+        <a href="/deployment" class="{{ 'active' if active_page == 'deployment' else '' }}">Deployment</a>
+      </nav>
+
+      <div class="header-actions">
+        <a class="github-source-btn" href="http://github.com/a1mohamad/disaster-tweet-app" target="_blank" rel="noreferrer">
+          <i class="fa-brands fa-github" aria-hidden="true"></i>
+          Source Code
+        </a>
+        <div class="system-status ok">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          <span>Live</span>
+        </div>
+      </div>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <footer class="global-footer">
+      <div class="footer-links">
+        <a href="mailto:a1.mohamad.askari@gmail.com" class="footer-link" aria-label="Gmail" title="Gmail"><i class="fa-brands fa-google" aria-hidden="true"></i></a>
+        <a href="mailto:amirmohmdaskari@gmail.com" class="footer-link" aria-label="iCloud" title="iCloud"><i class="fa-brands fa-apple" aria-hidden="true"></i></a>
+        <a href="tel:+989012223122" class="footer-link" aria-label="Phone" title="Phone"><i class="fa-solid fa-phone" aria-hidden="true"></i></a>
+        <a href="https://github.com/a1mohamad" target="_blank" rel="noreferrer" class="footer-link" aria-label="GitHub" title="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+        <a href="https://www.linkedin.com/in/amirmohammad-askari/" target="_blank" rel="noreferrer" class="footer-link" aria-label="LinkedIn" title="LinkedIn"><i class="fa-brands fa-linkedin" aria-hidden="true"></i></a>
+        <a href="https://www.kaggle.com/amirmohamadaskari" target="_blank" rel="noreferrer" class="footer-link" aria-label="Kaggle" title="Kaggle"><i class="fa-brands fa-kaggle" aria-hidden="true"></i></a>
+      </div>
+      <div class="ai-warning">AI can make mistakes. Check important info.</div>
+      <div class="copyright">&copy; 2026 Amir Mohamad Askari &bull; All Research Open Sourced via Apache License</div>
+    </footer>
+  </main>
+</body>
+</html>
