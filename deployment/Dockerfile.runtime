@@ -1,0 +1,29 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+RUN addgroup --system appgroup \
+    && adduser --system --ingroup appgroup appuser
+
+COPY requirements-runtime.txt .
+RUN python -m pip install --no-cache-dir --retries 5 --timeout 120 -r requirements-runtime.txt
+
+COPY app ./app
+COPY main.py .
+RUN mkdir -p /app/artifacts
+COPY artifacts/best_model.onnx ./artifacts/best_model.onnx
+COPY artifacts/best_threshold.json ./artifacts/best_threshold.json
+COPY artifacts/vocabs.json ./artifacts/vocabs.json
+COPY artifacts/label_mapping.json ./artifacts/label_mapping.json
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE 10000
+
+CMD ["sh", "-c", "uvicorn app.api:app --host 0.0.0.0 --port ${PORT:-10000}"]
