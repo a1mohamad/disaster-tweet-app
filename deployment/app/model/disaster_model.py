@@ -59,7 +59,12 @@ class DisasterTwittsClassifier(nn.Module):
         )
         
         # 2. Load weights safely
-        checkpoint = torch.load(config.MODEL_PATH, map_location=config.DEVICE)
+        if config.DEVICE == "auto":
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            device = torch.device(config.DEVICE)
+
+        checkpoint = torch.load(config.MODEL_PATH, map_location=device)
         if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
             state_dict = checkpoint["model_state_dict"]
         else:
@@ -67,8 +72,9 @@ class DisasterTwittsClassifier(nn.Module):
         model.load_state_dict(state_dict)
         
         # 3. Prepare for inference
-        model.to(config.DEVICE)
+        model.to(device)
         model.eval()
+        model.device = device
         
         return model
     
