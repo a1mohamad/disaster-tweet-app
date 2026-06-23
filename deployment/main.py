@@ -29,12 +29,6 @@ if __name__ == "__main__":
                 "Vocabulary file not found.",
                 {"path": str(config.VOCAB_PATH)},
             )
-        if not config.MODEL_PATH.exists():
-            raise ArtifactError(
-                "MODEL_NOT_FOUND",
-                "Model file not found.",
-                {"path": str(config.MODEL_PATH)},
-            )
         if args.use_label and not config.LABEL_MAPPING_PATH.exists():
             raise ArtifactError(
                 "LABEL_MAPPING_NOT_FOUND",
@@ -71,14 +65,14 @@ if __name__ == "__main__":
                 input_ids, input_length, return_label_name=True
                 )
             print(
-                f"Probability: {prob:.4f} | Label: {label_name} | Threshold: {predictor.threshold:.4f}"
+                f"Probability: {prob:.4f} | Label: {label_name} | Threshold: {predictor.threshold:.4f} | Backend: {predictor.backend_name}"
                 )
         else:
             prob, label = predictor.predict(
                 input_ids, input_length, return_label_name=False
                 )
             print(
-                f"Probability: {prob:.4f} | Label: {label} | Threshold: {predictor.threshold:.4f}"
+                f"Probability: {prob:.4f} | Label: {label} | Threshold: {predictor.threshold:.4f} | Backend: {predictor.backend_name}"
                 )
     except AppError as exc:
         print(exc.to_json())
