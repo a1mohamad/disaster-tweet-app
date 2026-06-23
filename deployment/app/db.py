@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS prediction_logs (
     label INTEGER NOT NULL,
     label_name TEXT NOT NULL,
     threshold REAL NOT NULL,
+    backend TEXT NOT NULL DEFAULT 'unknown',
     warnings_json TEXT
 );
 """
@@ -29,6 +30,11 @@ def connect_db(db_path: Path) -> sqlite3.Connection:
 
 def init_db(conn: sqlite3.Connection) -> None:
     conn.execute(CREATE_PREDICTIONS_TABLE)
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(prediction_logs)")}
+    if "backend" not in columns:
+        conn.execute(
+            "ALTER TABLE prediction_logs ADD COLUMN backend TEXT NOT NULL DEFAULT 'unknown'"
+        )
     conn.commit()
 
 
@@ -42,6 +48,7 @@ def log_prediction(
     label: int,
     label_name: str,
     threshold: float,
+    backend: str,
     warnings: Optional[List[Dict[str, Any]]],
 ) -> None:
     warnings_json = json.dumps(warnings or [], ensure_ascii=True)
@@ -57,9 +64,10 @@ def log_prediction(
             label,
             label_name,
             threshold,
+            backend,
             warnings_json
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             created_at,
@@ -70,6 +78,7 @@ def log_prediction(
             label,
             label_name,
             threshold,
+            backend,
             warnings_json,
         ),
     )
@@ -91,6 +100,7 @@ def fetch_recent_predictions(
             label,
             label_name,
             threshold,
+            backend,
             warnings_json
         FROM prediction_logs
         ORDER BY id DESC
@@ -113,6 +123,7 @@ def fetch_recent_predictions(
                 "label": row["label"],
                 "label_name": row["label_name"],
                 "threshold": row["threshold"],
+                "backend": row["backend"],
                 "warnings": warnings,
             }
         )
