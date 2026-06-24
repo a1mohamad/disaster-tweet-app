@@ -6,9 +6,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Run the API as a non-root user in production containers.
 RUN addgroup --system appgroup \
     && adduser --system --ingroup appgroup appuser
 
+# requirements.txt composes runtime and torch dependency groups.
 COPY requirements.txt .
 COPY requirements-runtime.txt .
 COPY requirements-torch.txt .
@@ -19,6 +21,8 @@ COPY app ./app
 COPY main.py .
 COPY scripts ./scripts
 COPY artifacts ./artifacts
+
+# /app/data stores the SQLite prediction log volume at runtime.
 RUN mkdir -p /app/data /app/artifacts && chown -R appuser:appgroup /app
 
 USER appuser

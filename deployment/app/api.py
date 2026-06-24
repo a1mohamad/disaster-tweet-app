@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
 import logging
 
 from fastapi import FastAPI, Request, Form
@@ -19,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Load artifacts, model backend, validator, and database for app lifetime."""
     config = AppConfig()
     seed_everything(config.SEED)
 
@@ -51,12 +53,14 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.exception("Failed to close DB connection")
 
+
 app = FastAPI(title="Disaster Tweet Predictor", lifespan=lifespan)
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
 def template_runtime_context(request: Request) -> dict:
+    """Return runtime details shared by HTML templates."""
     config = getattr(request.app.state, "config", None)
     db_path = str(config.DB_PATH) if config else "SQLite"
     return {
@@ -66,6 +70,7 @@ def template_runtime_context(request: Request) -> dict:
 
 
 def run_prediction(tweet: str, keyword: str | None = None) -> PredictResponse:
+    """Validate, featurize, run inference, log the result, and return the response."""
     config = app.state.config
     word2idx = app.state.word2idx
     predictor = app.state.predictor
@@ -105,12 +110,16 @@ def run_prediction(tweet: str, keyword: str | None = None) -> PredictResponse:
 
     return response
 
+
 @app.exception_handler(AppError)
-def app_error_handler(request: Request, exc: AppError):
+def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    """Convert application errors into JSON API responses."""
     return JSONResponse(status_code=400, content=exc.to_dict())
 
+
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request):
+def home(request: Request) -> HTMLResponse:
+    """Render the home page."""
     return templates.TemplateResponse(
         "index.html",
         {
@@ -121,7 +130,8 @@ def home(request: Request):
 
 
 @app.get("/app", response_class=HTMLResponse)
-def app_page(request: Request):
+def app_page(request: Request) -> HTMLResponse:
+    """Render the interactive prediction page."""
     return templates.TemplateResponse(
         "app.html",
         {
@@ -136,7 +146,8 @@ def app_page(request: Request):
 
 
 @app.get("/training", response_class=HTMLResponse)
-def training_page(request: Request):
+def training_page(request: Request) -> HTMLResponse:
+    """Render the training overview page."""
     return templates.TemplateResponse(
         "training.html",
         {
@@ -147,7 +158,8 @@ def training_page(request: Request):
 
 
 @app.get("/deployment", response_class=HTMLResponse)
-def deployment_page(request: Request):
+def deployment_page(request: Request) -> HTMLResponse:
+    """Render the deployment overview page."""
     return templates.TemplateResponse(
         "deployment.html",
         {
@@ -156,23 +168,28 @@ def deployment_page(request: Request):
         },
     )
 
+
 @app.get("/health")
-def health():
+def health() -> dict[str, str | None]:
+    """Return service health and selected inference backend."""
     predictor = getattr(app.state, "predictor", None)
     return {
         "status": "ok",
         "backend": predictor.backend_name if predictor else None,
     }
 
+
 @app.post("/predict", response_model=PredictResponse)
-def predict(req: PredictRequest):
+def predict(req: PredictRequest) -> PredictResponse:
+    """Predict disaster relevance for a JSON request."""
     return run_prediction(tweet=req.tweet, keyword=req.keyword)
 
 
 @app.post("/predict-ui", response_class=HTMLResponse)
 def predict_ui(
     request: Request, tweet: str = Form(...), keyword: str = Form(default="")
-):
+) -> HTMLResponse:
+    """Handle prediction submissions from the HTML form."""
     keyword_value = keyword.strip() or None
     try:
         result = run_prediction(tweet=tweet, keyword=keyword_value)
@@ -195,9 +212,9 @@ def predict_ui(
 
 
 @app.get("/logs", response_model=list[PredictionLog])
-def logs(limit: int = 50):
+def logs(limit: int = 50) -> list[dict]:
+    """Return recent prediction logs with a bounded limit."""
     db_conn = app.state.db
     limit = max(1, min(limit, 200))
     return fetch_recent_predictions(db_conn, limit=limit)
-
 

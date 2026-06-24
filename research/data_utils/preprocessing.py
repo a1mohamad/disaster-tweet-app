@@ -1,55 +1,38 @@
-import pandas as pd
 import re
+from typing import Any
 
-def clean_text(text, config):
-    '''
-    Professional cleaning for Deep Learning:
-    - Removes URLs and HTML tags
-    - Standardizes whitespace
-    - Keeps punctuation and stopwords for context
-    '''
+import pandas as pd
+
+
+def clean_text(text: str, config: Any) -> str:
+    """Normalize tweet text while preserving useful disaster-reporting context."""
     if config.LOWERCASE:
-        # Lowercase
         text = text.lower()
     elif config.UPPERCASE:
         text = text.upper()
 
-    # URLs
     text = re.sub(r'https?://\S+|www\.\S+', ' <URL> ', text)
-
-    # HTML entities
     text = re.sub(r'&amp;', ' and ', text)
-
-    # Mentions
     text = re.sub(r'@\w+', ' <USER> ', text)
-
-    # Split URL-style joined words (general)
     text = re.sub(r'%20', ' ', text)
-
-
-    # Remove broken unicode artifacts
     text = re.sub(r'[^\x00-\x7F]+', ' ', text)
 
-    # Normalize repeated punctuation
+    # Keep the fact that punctuation was repeated, but cap it to stable tokens.
     text = re.sub(r'!{2,}', ' !! ', text)
     text = re.sub(r'\?{2,}', ' ?? ', text)
 
-    if config.STRIP_MULTIPLE_WHITESPACE:    
-        # Normalize whitespace
+    if config.STRIP_MULTIPLE_WHITESPACE:
         text = re.sub(r'\s+', ' ', text).strip()
 
-    # Normalize numbers
     text = re.sub(r'\b\d+\b', ' <NUM> ', text)
-
-    # Reduce elongated words: cooool -> cool
     text = re.sub(r'(.)\1{2,}', r'\1\1', text)
-
     text = re.sub(r'#\s+(\w+)', r'#\1', text)
-
 
     return text
 
-def final_text_with_keyword(row, config):
+
+def final_text_with_keyword(row: pd.Series, config: Any) -> str:
+    """Combine keyword and tweet text into the model's final training input."""
     keyword = str(row["keyword"]).strip() if pd.notna(row["keyword"]) else ""
     keyword = clean_text(keyword, config)
     cleaned_text = clean_text(row["text"], config)
@@ -60,7 +43,8 @@ def final_text_with_keyword(row, config):
     return cleaned_text
 
 
-def preprocess_df(df, config):
+def preprocess_df(df: pd.DataFrame, config: Any) -> pd.DataFrame:
+    """Create the final text column and remove raw columns no longer needed."""
     if config.DROP_LOCATION and 'location' in df.columns:
         df = df.drop(columns=['location'])
 

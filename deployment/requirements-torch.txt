@@ -1,3 +1,6 @@
+# CPU wheels keep the full image portable when GPU inference is not required.
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.4.1+cpu
+
+# Needed by scripts/export_onnx.py when generating runtime artifacts.
 onnx==1.16.2

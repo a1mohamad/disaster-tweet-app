@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS prediction_logs (
 
 
 def connect_db(db_path: Path) -> sqlite3.Connection:
+    """Open the SQLite database used to persist prediction logs."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db_path), check_same_thread=False)
     conn.row_factory = sqlite3.Row
@@ -29,6 +30,7 @@ def connect_db(db_path: Path) -> sqlite3.Connection:
 
 
 def init_db(conn: sqlite3.Connection) -> None:
+    """Create or migrate the prediction log table."""
     conn.execute(CREATE_PREDICTIONS_TABLE)
     columns = {row["name"] for row in conn.execute("PRAGMA table_info(prediction_logs)")}
     if "backend" not in columns:
@@ -51,6 +53,7 @@ def log_prediction(
     backend: str,
     warnings: Optional[List[Dict[str, Any]]],
 ) -> None:
+    """Insert one prediction request and response into SQLite."""
     warnings_json = json.dumps(warnings or [], ensure_ascii=True)
     created_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     conn.execute(
@@ -88,6 +91,7 @@ def log_prediction(
 def fetch_recent_predictions(
     conn: sqlite3.Connection, limit: int = 50
 ) -> List[Dict[str, Any]]:
+    """Fetch recent prediction logs in newest-first order."""
     cursor = conn.execute(
         """
         SELECT

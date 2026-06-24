@@ -1,6 +1,7 @@
 import argparse
 import json
 import sys
+from argparse import Namespace
 
 from app.utils.seed import seed_everything
 from app.app_config import AppConfig
@@ -10,12 +11,15 @@ from app.data.preprocessing import (load_vocabs,
 from app.utils.validation import InputValidator
 from app.utils.errors import AppError, ArtifactError
 
-def parse_args():
+
+def parse_args() -> Namespace:
+    """Parse command-line inputs for single-tweet inference."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--keyword", type=str, default="")
     parser.add_argument("--tweet", type=str, default="")
     parser.add_argument("--use-label", action="store_true")
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     try:
@@ -38,7 +42,8 @@ if __name__ == "__main__":
 
         word2idx, idx2word, vocab_size = load_vocabs(config.VOCAB_PATH)
 
-        def get_valid_inputs():
+        def get_valid_inputs() -> str:
+            """Collect or read inputs and return validated model-ready text."""
             validator = InputValidator(config)
             while True:
                 keyword = args.keyword or str(input("Keyword: "))

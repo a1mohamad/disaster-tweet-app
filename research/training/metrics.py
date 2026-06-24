@@ -3,14 +3,18 @@ from torchmetrics.classification import (BinaryAccuracy,
                                          BinaryRecall, 
                                          BinaryF1Score)
 
-def build_train_metrics(cfg):
+
+def build_train_metrics(cfg: object) -> dict[str, BinaryAccuracy]:
+    """Create metrics tracked during training batches."""
     train_metrics = {
         "accuracy": BinaryAccuracy(threshold=cfg.METRIC_THRESHOLD).to(cfg.DEVICE)
     }
 
     return train_metrics
 
-def build_val_metrics(cfg):
+
+def build_val_metrics(cfg: object) -> dict[str, object]:
+    """Create metrics tracked during validation batches."""
 
     val_metrics = {
         "accuracy": BinaryAccuracy(threshold=cfg.METRIC_THRESHOLD).to(cfg.DEVICE),

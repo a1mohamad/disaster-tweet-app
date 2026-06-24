@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -21,7 +22,8 @@ SAMPLE_TEXTS = [
 ]
 
 
-def load_threshold(config):
+def load_threshold(config: object) -> float:
+    """Load the trained threshold, falling back to the configured default."""
     try:
         threshold = torch.load(config.THRESHOLD_PATH, map_location="cpu")
         if isinstance(threshold, torch.Tensor):
@@ -31,11 +33,15 @@ def load_threshold(config):
         return float(config.THRESHOLD)
 
 
-def sigmoid(value):
+def sigmoid(value: float) -> float:
+    """Compute sigmoid as a plain Python float."""
     return float(1.0 / (1.0 + np.exp(-float(value))))
 
 
-def export_onnx(config, vocab_size, output_path):
+def export_onnx(
+    config: object, vocab_size: int, output_path: Path
+) -> DisasterTwittsClassifier:
+    """Export the trained PyTorch model to ONNX format."""
     model = DisasterTwittsClassifier.from_pretrained(config, vocab_size)
     dummy_ids = torch.zeros((1, config.MAX_LENGTH), dtype=torch.long)
     dummy_length = torch.ones((1,), dtype=torch.long)
@@ -60,7 +66,14 @@ def export_onnx(config, vocab_size, output_path):
     return model
 
 
-def validate_onnx(config, model, word2idx, output_path, tolerance):
+def validate_onnx(
+    config: object,
+    model: DisasterTwittsClassifier,
+    word2idx: dict[str, int],
+    output_path: Path,
+    tolerance: float,
+) -> tuple[list[dict[str, Any]], float]:
+    """Compare ONNX and PyTorch probabilities on representative samples."""
     import onnx
     import onnxruntime as ort
 
@@ -108,7 +121,8 @@ def validate_onnx(config, model, word2idx, output_path, tolerance):
     return results, max_delta
 
 
-def main():
+def main() -> None:
+    """Export artifacts and optionally validate ONNX parity."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--tolerance", type=float, default=1e-4)

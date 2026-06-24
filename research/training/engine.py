@@ -1,6 +1,17 @@
+from typing import Any
+
 import torch
 
-def train_one_epoch(model, loader, optimizer, criterion, metrics, device):
+
+def train_one_epoch(
+    model: torch.nn.Module,
+    loader: torch.utils.data.DataLoader,
+    optimizer: torch.optim.Optimizer,
+    criterion: torch.nn.Module,
+    metrics: dict[str, Any],
+    device: torch.device,
+) -> tuple[float, dict[str, float]]:
+    """Train the model for one epoch and return loss plus metric values."""
     model.train()
     total_loss = 0.0
     for m in metrics.values():
@@ -23,12 +34,20 @@ def train_one_epoch(model, loader, optimizer, criterion, metrics, device):
             m.update(probs, labels)
 
     total_loss /= len(loader.dataset)
-    results = {k:m.compute().item() for k, m in metrics.items()}
+    results = {k: m.compute().item() for k, m in metrics.items()}
 
     return total_loss, results
 
-@torch.no_grad
-def evaluate(model, loader, criterion, metrics, device):
+
+@torch.no_grad()
+def evaluate(
+    model: torch.nn.Module,
+    loader: torch.utils.data.DataLoader,
+    criterion: torch.nn.Module,
+    metrics: dict[str, Any],
+    device: torch.device,
+) -> tuple[float, dict[str, float]]:
+    """Evaluate the model without gradient tracking."""
     model.eval()
     total_loss = 0.0
     for m in metrics.values():
@@ -47,5 +66,5 @@ def evaluate(model, loader, criterion, metrics, device):
             m.update(probs, labels)
 
     total_loss /= len(loader.dataset)
-    results = {k:m.compute().item() for k, m in metrics.items()}
+    results = {k: m.compute().item() for k, m in metrics.items()}
     return total_loss, results

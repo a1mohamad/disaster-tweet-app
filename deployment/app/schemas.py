@@ -1,11 +1,18 @@
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
+
 class PredictRequest(BaseModel):
+    """Request body for JSON prediction calls."""
+
     tweet: str = Field(..., min_length=1)
     keyword: Optional[str] = ""
 
+
 class PredictResponse(BaseModel):
+    """Prediction result returned by the API and rendered by the UI."""
+
     probability: float
     label: int
     label_name: str
@@ -15,6 +22,8 @@ class PredictResponse(BaseModel):
 
 
 class PredictionLog(BaseModel):
+    """Stored prediction record returned by the logs endpoint."""
+
     id: int
     created_at: str
     tweet: str

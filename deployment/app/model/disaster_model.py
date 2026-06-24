@@ -1,10 +1,23 @@
 import torch
 from torch import nn
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from torch.nn.utils.rnn import pack_padded_sequence
+
 
 class DisasterTwittsClassifier(nn.Module):
-    def __init__(self, vocab_size, emb_dim, hidden_dim, output_dim, num_layers, dropout, 
-                 bidirectional=True, embedding=None, freeze_embedding=True):
+    """LSTM classifier architecture used by the production predictor."""
+
+    def __init__(
+        self,
+        vocab_size: int,
+        emb_dim: int,
+        hidden_dim: int,
+        output_dim: int,
+        num_layers: int,
+        dropout: float,
+        bidirectional: bool = True,
+        embedding: torch.Tensor | None = None,
+        freeze_embedding: bool = True,
+    ) -> None:
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, emb_dim)
         if embedding is not None:
@@ -22,14 +35,14 @@ class DisasterTwittsClassifier(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_dim*(2 if bidirectional else 1), output_dim)
 
-    def forward(self, x, lengths=None):
+    def forward(self, x: torch.Tensor, lengths: torch.Tensor | None = None) -> torch.Tensor:
+        """Run padded token ids through embedding, LSTM, dropout, and output layer."""
         x = self.embedding(x)
         if lengths is not None:
             packed_x = pack_padded_sequence(x, lengths.cpu(), batch_first=True, enforce_sorted=False)
-            packed_out, (h_n, c_n) = self.lstm(packed_x)
-            lstm_out, _ = pad_packed_sequence(packed_out, batch_first=True)
+            _, (h_n, _) = self.lstm(packed_x)
         else:
-            lstm_out, (h_n, c_n) = self.lstm(x)
+            _, (h_n, _) = self.lstm(x)
 
         if self.lstm.bidirectional:
             x = torch.cat([h_n[-2,:,:], h_n[-1,:,:]], dim=1)
@@ -41,11 +54,8 @@ class DisasterTwittsClassifier(nn.Module):
         return out
     
     @classmethod
-    def from_pretrained(cls, config, vocab_size):
-        '''
-        Professional factory method to instantiate and load the model.
-        '''
-        # 1. Instantiate the class (cls refers to DisasterTwittsClassifier)
+    def from_pretrained(cls, config: object, vocab_size: int) -> "DisasterTwittsClassifier":
+        """Instantiate the classifier and load trained weights from disk."""
         model = cls(
             vocab_size=vocab_size,
             emb_dim=config.EMB_DIM,
@@ -58,12 +68,12 @@ class DisasterTwittsClassifier(nn.Module):
             freeze_embedding=config.FREEZE_EMBEDDING
         )
         
-        # 2. Load weights safely
         if config.DEVICE == "auto":
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
             device = torch.device(config.DEVICE)
 
+        # Support both raw state_dict files and trainer checkpoints.
         checkpoint = torch.load(config.MODEL_PATH, map_location=device)
         if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
             state_dict = checkpoint["model_state_dict"]
@@ -71,7 +81,6 @@ class DisasterTwittsClassifier(nn.Module):
             state_dict = checkpoint
         model.load_state_dict(state_dict)
         
-        # 3. Prepare for inference
         model.to(device)
         model.eval()
         model.device = device

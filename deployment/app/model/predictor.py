@@ -1,5 +1,7 @@
 import json
 from json import JSONDecodeError
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -7,9 +9,11 @@ from app.utils.errors import ArtifactError, InferenceError, ModelError
 
 
 class OnnxBackend:
+    """ONNX Runtime inference backend."""
+
     name = "onnx"
 
-    def __init__(self, config):
+    def __init__(self, config: object) -> None:
         try:
             import onnxruntime as ort
         except Exception as exc:
@@ -34,7 +38,8 @@ class OnnxBackend:
         self.input_names = [item.name for item in self.session.get_inputs()]
         self.output_name = self.session.get_outputs()[0].name
 
-    def predict_logit(self, input_ids, input_length):
+    def predict_logit(self, input_ids: np.ndarray, input_length: np.ndarray) -> float:
+        """Run the ONNX model and return the raw logit."""
         feeds = {
             "input_ids": np.asarray(input_ids, dtype=np.int64),
             "input_length": np.asarray(input_length, dtype=np.int64),
@@ -45,9 +50,11 @@ class OnnxBackend:
 
 
 class TorchBackend:
+    """PyTorch inference backend used directly or as an ONNX fallback."""
+
     name = "torch"
 
-    def __init__(self, config, vocab_size):
+    def __init__(self, config: object, vocab_size: int) -> None:
         try:
             import torch
             from app.model.disaster_model import DisasterTwittsClassifier
@@ -75,7 +82,8 @@ class TorchBackend:
                 {"error": str(exc)},
             ) from exc
 
-    def predict_logit(self, input_ids, input_length):
+    def predict_logit(self, input_ids: np.ndarray, input_length: np.ndarray) -> float:
+        """Run the PyTorch model and return the raw logit."""
         tensor_ids = self.torch.as_tensor(
             input_ids, dtype=self.torch.long, device=self.device
         )
@@ -86,25 +94,38 @@ class TorchBackend:
 
 
 class DisasterTwittsPredictor:
-    def __init__(self, backend, threshold, label_mapping=None, warnings=None):
+    """High-level predictor that wraps backend selection, thresholding, and labels."""
+
+    def __init__(
+        self,
+        backend: OnnxBackend | TorchBackend,
+        threshold: float,
+        label_mapping: dict[int, str] | None = None,
+        warnings: list[dict[str, Any]] | None = None,
+    ) -> None:
         self.backend = backend
         self.threshold = float(threshold)
         self.label_mapping = label_mapping
         self.warnings = warnings or []
 
     @property
-    def backend_name(self):
+    def backend_name(self) -> str:
+        """Return the selected backend name for API responses and logs."""
         return self.backend.name
 
     @classmethod
-    def from_config(cls, config, vocab_size):
+    def from_config(cls, config: object, vocab_size: int) -> "DisasterTwittsPredictor":
+        """Build a predictor from application configuration and artifact metadata."""
         warnings = []
         backend = cls._load_backend(config, vocab_size, warnings)
         threshold = cls._load_threshold(config, warnings)
         return cls(backend=backend, threshold=threshold, warnings=warnings)
 
     @classmethod
-    def _load_backend(cls, config, vocab_size, warnings):
+    def _load_backend(
+        cls, config: object, vocab_size: int, warnings: list[dict[str, Any]]
+    ) -> OnnxBackend | TorchBackend:
+        """Select and initialize the configured inference backend."""
         requested = config.INFERENCE_BACKEND
         if requested not in {"auto", "onnx", "torch"}:
             raise ModelError(
@@ -134,6 +155,7 @@ class DisasterTwittsPredictor:
                     {"path": str(config.ONNX_MODEL_PATH)},
                 )
             else:
+                # In auto mode the service prefers ONNX, then falls back to PyTorch.
                 warnings.append(
                     {
                         "warning_code": "ONNX_MODEL_NOT_FOUND",
@@ -158,7 +180,8 @@ class DisasterTwittsPredictor:
         return TorchBackend(config, vocab_size)
 
     @staticmethod
-    def _load_threshold(config, warnings):
+    def _load_threshold(config: object, warnings: list[dict[str, Any]]) -> float:
+        """Load the decision threshold, falling back to configured default when safe."""
         if config.THRESHOLD_JSON_PATH.exists():
             try:
                 with open(config.THRESHOLD_JSON_PATH, "r", encoding="utf-8") as f:
@@ -213,7 +236,8 @@ class DisasterTwittsPredictor:
             )
             return config.THRESHOLD
 
-    def load_label_mapping(self, path):
+    def load_label_mapping(self, path: str | Path) -> dict[int, str]:
+        """Load integer label ids to display names."""
         try:
             with open(path, "r", encoding="utf-8") as f:
                 mapping = json.load(f)
@@ -232,7 +256,13 @@ class DisasterTwittsPredictor:
         self.label_mapping = {int(k): v for k, v in mapping.items()}
         return self.label_mapping
 
-    def predict(self, input_ids, input_length, return_label_name=True):
+    def predict(
+        self,
+        input_ids: np.ndarray,
+        input_length: np.ndarray,
+        return_label_name: bool = True,
+    ) -> tuple[float, int, str] | tuple[float, int]:
+        """Return probability, numeric label, and optionally the label name."""
         try:
             logit = self.backend.predict_logit(input_ids, input_length)
             prob = float(1.0 / (1.0 + np.exp(-logit)))

@@ -1,8 +1,12 @@
 import json
 from pathlib import Path
+from typing import Any
+
 
 class EarlyStopping:
-    def __init__(self, patience=5, mode='min', min_delta=0.0):
+    """Track metric improvement and signal when training should stop."""
+
+    def __init__(self, patience: int = 5, mode: str = 'min', min_delta: float = 0.0) -> None:
         self.patience = patience
         self.mode = mode
         self.min_delta = min_delta
@@ -11,7 +15,8 @@ class EarlyStopping:
         self.best_score = None
         self.counter = 0
 
-    def step(self, current_score):
+    def step(self, current_score: float) -> bool:
+        """Update state with the latest score and return True when it improved."""
         if self.best_score is None:
             self.best_score = current_score
             return True
@@ -32,7 +37,9 @@ class EarlyStopping:
             return False
 
 class TrainingHistory:
-    def __init__(self):
+    """Collect and persist per-epoch training metrics."""
+
+    def __init__(self) -> None:
         self.history = {
             "train_loss": [],
             "val_loss": [],
@@ -44,7 +51,15 @@ class TrainingHistory:
             "lr": []
         }
 
-    def update(self, train_loss, val_loss, train_metrics, val_metrics, optimizer):
+    def update(
+        self,
+        train_loss: float,
+        val_loss: float,
+        train_metrics: dict[str, float],
+        val_metrics: dict[str, float],
+        optimizer: Any,
+    ) -> None:
+        """Append one epoch of loss, metric, and learning-rate values."""
         self.history["train_loss"].append(train_loss)
         self.history["val_loss"].append(val_loss)
         self.history["train_accuracy"].append(train_metrics["accuracy"])
@@ -54,7 +69,7 @@ class TrainingHistory:
         self.history["val_f1"].append(val_metrics["f1"])
         self.history["lr"].append(optimizer.param_groups[0]["lr"])
 
-    def save(self, path: str):
+    def save(self, path: str | Path) -> None:
         """Save training history to a JSON file."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -63,7 +78,7 @@ class TrainingHistory:
         print(f"Training history saved to {path}")
 
     @classmethod
-    def load(cls, path: str):
+    def load(cls, path: str | Path) -> "TrainingHistory":
         """Load training history from a JSON file."""
         path = Path(path)
         if not path.exists():

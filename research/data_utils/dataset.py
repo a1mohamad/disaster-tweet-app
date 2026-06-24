@@ -1,10 +1,15 @@
 from collections import Counter
+from collections.abc import Iterable
+from typing import Any
 import json
 from pathlib import Path
+
 import torch
 from torch.utils.data import Dataset
 
-def build_vocab(texts, config):
+
+def build_vocab(texts: Iterable[str], config: Any) -> dict[str, int]:
+    """Build a token-to-index vocabulary from training texts."""
     counter = Counter()
     vocab_size = config.VOCAB_SIZE
     PAD_TOKEN = config.PAD_TOKEN
@@ -27,7 +32,9 @@ def build_vocab(texts, config):
 
     return vocab
 
-def save_vocabs(stoi: dict, path: str):
+
+def save_vocabs(stoi: dict[str, int], path: str | Path) -> None:
+    """Save token lookup tables in the JSON format used by deployment."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -46,7 +53,9 @@ def save_vocabs(stoi: dict, path: str):
 
     print("Vocab and inverse Vocab saved as a JSON file")
 
-def encode_text(text, vocab, maxlen, config):
+
+def encode_text(text: str, vocab: dict[str, int], maxlen: int, config: Any) -> list[int]:
+    """Convert one cleaned tweet into fixed-length token ids."""
     PAD_TOKEN = config.PAD_TOKEN
     UNK_TOKEN = config.UNK_TOKEN
     tokens = text.split()
@@ -60,21 +69,26 @@ def encode_text(text, vocab, maxlen, config):
 
     return ids
 
-def decode(ids, idx2word, config):
+
+def decode(ids: Iterable[int], idx2word: dict[int, str], config: Any) -> str:
+    """Convert token ids back to text, skipping padding ids."""
     return " ".join([idx2word.get(i, "<UNK>") for i in ids if i != config.PAD_IDX])
 
+
 class DisasterDataset(Dataset):
-    def __init__(self, df, vocab, config):
+    """PyTorch dataset that returns encoded tweets, labels, and sequence lengths."""
+
+    def __init__(self, df: Any, vocab: dict[str, int], config: Any) -> None:
         self.texts = df["final_text"].values
         self.targets = df["target"].values
         self.vocab = vocab
         self.maxlen = config.MAX_LENGTH
         self.config = config
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.texts)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         encoded_text = encode_text(
             self.texts[idx],
             self.vocab,

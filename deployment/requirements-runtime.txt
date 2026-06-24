@@ -1,8 +1,13 @@
+# FastAPI serving stack
 fastapi==0.115.0
 uvicorn==0.30.6
 pydantic==2.9.2
+
+# ONNX inference and request preprocessing
 numpy==2.1.1
 onnxruntime==1.19.2
 langdetect==1.0.9
+
+# HTML UI support
 jinja2==3.1.4
 python-multipart==0.0.12
