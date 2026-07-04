@@ -28,7 +28,7 @@ ARTIFACT_DIR: ./artifacts/
 IMAGE_DIR: ./images/
 DATA_DIR: ./data/
 CHECKPOINT_PATH: ./model/
-EMB_PATH: ./data/glove.6B.100d.txt
+EMB_PATH: ../../../../research-notebooks/glove.6B.100d.txt
 TRAIN_PATH: ./data/train.csv
 TEST_PATH: ./data/test.csv
 DEVICE: cuda
